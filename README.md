@@ -121,10 +121,6 @@ This app is designed to provide general parenting information and should not rep
 
 MIT License - feel free to use this project for learning or personal use.
 
-## 🔗 Links
-
-- Part of the [#30Days30Apps Challenge](https://github.com/yourusername/30Days30Apps)
-- Day 4 Project
 
 ## 💡 Future Enhancements
 
