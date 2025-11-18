@@ -1,7 +1,5 @@
 # FirstYears App 👶
 
-**Day 4 of #30Days30Apps Challenge**
-
 A personalized parenting assistant for the first year of your child's life. Built with React, this app provides AI-powered guidance tailored to your child's specific age and medical history — all stored locally in your browser.
 
 ## 🎯 Overview
