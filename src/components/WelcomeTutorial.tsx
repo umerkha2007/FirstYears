@@ -101,7 +101,17 @@ const WelcomeTutorial = ({ open, onClose }: WelcomeTutorialProps) => {
         element = document.querySelector('[role="combobox"]') as HTMLElement;
         break;
       case 'manage-kids-button':
-        element = document.querySelector('button:has(svg[data-testid="ChildCareIcon"])') as HTMLElement;
+        // Both mobile and desktop versions exist in DOM, need to find the visible one
+        const mobileManageKids = document.querySelector('button[aria-label="manage kids"]') as HTMLElement;
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const desktopManageKids = buttons.find(btn => btn.textContent?.includes('Manage Kids')) as HTMLElement;
+        
+        // Check which one is actually visible (display !== 'none')
+        if (mobileManageKids && window.getComputedStyle(mobileManageKids).display !== 'none') {
+          element = mobileManageKids;
+        } else if (desktopManageKids && window.getComputedStyle(desktopManageKids).display !== 'none') {
+          element = desktopManageKids;
+        }
         break;
       case 'settings-button':
         element = document.querySelector('button[aria-label="settings"]') as HTMLElement;

@@ -49,7 +49,7 @@ const Header = ({
           alt="FirstYears Logo"
           sx={{ height: 32, mr: 2, background: 'white', borderRadius: '30%' }}
         />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}>
           FirstYears
         </Typography>
         
@@ -88,14 +88,28 @@ const Header = ({
 
         {/* Manage Kids Button */}
         {onManageKidsClick && (
-          <Button
-            color="inherit"
-            startIcon={<ChildCareIcon />}
-            onClick={onManageKidsClick}
-            sx={{ mr: 1, display: { xs: 'none', sm: 'flex' } }}
-          >
-            Manage Kids
-          </Button>
+          <>
+            {/* Desktop version with text */}
+            <Button
+              color="inherit"
+              startIcon={<ChildCareIcon />}
+              onClick={onManageKidsClick}
+              sx={{ mr: 1, display: { xs: 'none', sm: 'flex' } }}
+            >
+              Manage Kids
+            </Button>
+            {/* Mobile version - icon only */}
+            <Tooltip title="Manage Kids">
+              <IconButton
+                color="inherit"
+                aria-label="manage kids"
+                onClick={onManageKidsClick}
+                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+              >
+                <ChildCareIcon />
+              </IconButton>
+            </Tooltip>
+          </>
         )}
 
         {/* Help Button */}
