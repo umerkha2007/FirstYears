@@ -19,6 +19,7 @@ interface LLMRequestContext {
     child: {
       name: string;
       dateOfBirth: string;
+      gender?: string;
       age: {
         years: number;
         months: number;
@@ -30,6 +31,8 @@ interface LLMRequestContext {
     };
     parent?: {
       name: string;
+      age?: number;
+      gender?: string;
       medicalHistory?: string;
     };
     conversationHistory: Array<{
@@ -53,19 +56,43 @@ interface LLMRequestContext {
   };
 }
 
-export const generateSystemPrompt = (childProfile: ChildProfile): string => {
+export const generateSystemPrompt = (childProfile: ChildProfile, parentProfile?: ParentProfile): string => {
   const formattedAge = formatChildAge(childProfile.dateOfBirth);
   
-  return `You are a helpful parenting assistant for FirstYears, an app designed to help parents during their child's first year.
+  let prompt = `You are a helpful parenting assistant for FirstYears, an app designed to help parents during their child's first year.
 
 Context about the child:
 - Name: ${childProfile.name}
-- Age: ${formattedAge}
-- Medical History: ${childProfile.medicalHistory || 'None provided'}
+- Age: ${formattedAge}${childProfile.gender ? `
+- Gender: ${childProfile.gender}` : ''}
+- Medical History: ${childProfile.medicalHistory || 'None provided'}`;
+
+  if (parentProfile) {
+    prompt += `
+
+Context about the parent:
+- Name: ${parentProfile.name}`;
+    if (parentProfile.age) {
+      prompt += `
+- Age: ${parentProfile.age}`;
+    }
+    if (parentProfile.gender) {
+      prompt += `
+- Gender: ${parentProfile.gender}`;
+    }
+    if (parentProfile.medicalHistory) {
+      prompt += `
+- Medical History: ${parentProfile.medicalHistory}`;
+    }
+  }
+
+  prompt += `
 
 Please provide evidence-based parenting advice tailored to this child's age and circumstances. Always remind parents to consult with their pediatrician for medical concerns.
 
 Format your responses in Markdown for better readability. Use headings, lists, tables, bold/italic text, and other markdown features as appropriate for the content.`;
+
+  return prompt;
 };
 
 const buildRequestContext = (
@@ -81,6 +108,7 @@ const buildRequestContext = (
       child: {
         name: request.childProfile.name,
         dateOfBirth: request.childProfile.dateOfBirth,
+        gender: request.childProfile.gender,
         age: {
           years: age.years,
           months: age.months,
@@ -119,6 +147,8 @@ const buildRequestContext = (
   if (request.parentProfile) {
     context.context.parent = {
       name: request.parentProfile.name,
+      age: request.parentProfile.age,
+      gender: request.parentProfile.gender,
       medicalHistory: request.parentProfile.medicalHistory,
     };
   }
@@ -136,7 +166,7 @@ export const sendMessageToLLM = async (
     const requestContext = buildRequestContext(request, provider);
     
     // Generate system prompt with markdown formatting instructions
-    const systemPrompt = generateSystemPrompt(request.childProfile);
+    const systemPrompt = generateSystemPrompt(request.childProfile, request.parentProfile);
     
     // Example for OpenAI-compatible APIs
     if (provider.toLowerCase().includes('openai') || provider.toLowerCase().includes('gpt')) {

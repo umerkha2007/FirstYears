@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { profileStorageService } from '../services/profileStorageService';
 import type { ProfileData } from '../services/profileStorageService';
+import { kidProfilesService } from '../services/kidProfilesService';
 
 const steps = ['Parent Profile', 'Child Profile', 'API Configuration'];
 
@@ -101,9 +102,12 @@ interface ProfileSetupProps {
 const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps) => {
   const [activeStep, setActiveStep] = useState(0);
   const [parentName, setParentName] = useState('');
+  const [parentAge, setParentAge] = useState('');
+  const [parentGender, setParentGender] = useState('');
   const [parentMedicalHistory, setParentMedicalHistory] = useState('');
   const [childName, setChildName] = useState('');
   const [childDOB, setChildDOB] = useState('');
+  const [childGender, setChildGender] = useState('');
   const [medicalHistory, setMedicalHistory] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [provider, setProvider] = useState('');
@@ -117,9 +121,12 @@ const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps)
     const existingData = profileStorageService.loadAllProfiles();
     if (existingData) {
       setParentName(existingData.parentProfile.name);
+      setParentAge(existingData.parentProfile.age?.toString() || '');
+      setParentGender(existingData.parentProfile.gender || '');
       setParentMedicalHistory(existingData.parentProfile.medicalHistory || '');
       setChildName(existingData.childProfile.name);
       setChildDOB(existingData.childProfile.dateOfBirth);
+      setChildGender(existingData.childProfile.gender || '');
       setMedicalHistory(existingData.childProfile.medicalHistory || '');
       setApiKey(existingData.apiConfig.apiKey);
       setProvider(existingData.apiConfig.provider);
@@ -138,11 +145,14 @@ const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps)
     const profileData: ProfileData = {
       parentProfile: {
         name: parentName,
+        age: parentAge ? parseInt(parentAge, 10) : undefined,
+        gender: parentGender || undefined,
         medicalHistory: parentMedicalHistory,
       },
       childProfile: {
         name: childName,
         dateOfBirth: childDOB,
+        gender: childGender || undefined,
         medicalHistory: medicalHistory,
       },
       apiConfig: {
@@ -154,6 +164,28 @@ const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps)
     const success = profileStorageService.saveAllProfiles(profileData);
 
     if (success) {
+      // Create or update kid profile directly
+      if (!isEditing) {
+        // On first setup, create a kid profile
+        kidProfilesService.createKidProfile(
+          childName,
+          childDOB,
+          childGender || undefined,
+          medicalHistory
+        );
+      } else {
+        // When editing, update the existing active kid profile if it matches the child name
+        const activeKidProfile = kidProfilesService.getActiveKidProfile();
+        if (activeKidProfile) {
+          kidProfilesService.updateKidProfile(activeKidProfile.id, {
+            name: childName,
+            dateOfBirth: childDOB,
+            gender: childGender || undefined,
+            medicalHistory: medicalHistory,
+          });
+        }
+      }
+
       setSnackbarMessage(isEditing ? 'Profile updated successfully! Redirecting to chat...' : 'Profile saved successfully! Redirecting to chat...');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
@@ -202,6 +234,34 @@ const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps)
               error={parentName.trim() === ''}
               helperText={parentName.trim() === '' ? 'This field is required' : ''}
             />
+            <TextField
+              fullWidth
+              type="number"
+              label="Age (optional)"
+              value={parentAge}
+              onChange={(e) => setParentAge(e.target.value)}
+              margin="normal"
+              slotProps={{
+                input: {
+                  inputProps: { min: 0, max: 120 }
+                }
+              }}
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="gender-select-label">Gender (optional)</InputLabel>
+              <Select
+                labelId="gender-select-label"
+                value={parentGender}
+                label="Gender (optional)"
+                onChange={(e) => setParentGender(e.target.value)}
+              >
+                <MenuItem value="">Prefer not to say</MenuItem>
+                <MenuItem value="male">Male</MenuItem>
+                <MenuItem value="female">Female</MenuItem>
+                <MenuItem value="non-binary">Non-binary</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
               multiline
@@ -257,6 +317,21 @@ const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps)
                 }
               }}
             />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="child-gender-select-label">Gender (optional)</InputLabel>
+              <Select
+                labelId="child-gender-select-label"
+                value={childGender}
+                label="Gender (optional)"
+                onChange={(e) => setChildGender(e.target.value)}
+              >
+                <MenuItem value="">Prefer not to say</MenuItem>
+                <MenuItem value="male">Male</MenuItem>
+                <MenuItem value="female">Female</MenuItem>
+                <MenuItem value="non-binary">Non-binary</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
               multiline

@@ -16,12 +16,15 @@ const STORAGE_KEYS = {
 // Type definitions
 export interface ParentProfile {
   name: string;
+  age?: number;
+  gender?: string;
   medicalHistory?: string;
 }
 
 export interface ChildProfile {
   name: string;
   dateOfBirth: string;
+  gender?: string;
   medicalHistory?: string;
 }
 

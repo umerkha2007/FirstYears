@@ -15,13 +15,15 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChat } from '../contexts/ChatContext';
 import { useProfile } from '../contexts/ProfileContext';
+import { useKidProfile } from '../contexts/KidProfileContext';
 import { messagingService } from '../services/messagingService';
 import type { ChatMessage } from '../services/messagingService';
 
 const ChatInterface = () => {
   const [input, setInput] = useState('');
   const { messages, addMessage, isLoading, setIsLoading } = useChat();
-  const { childProfile, parentProfile, apiKey, provider } = useProfile();
+  const { parentProfile, apiKey, provider } = useProfile();
+  const { activeKidProfile } = useKidProfile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +36,7 @@ const ChatInterface = () => {
     if (!input.trim() || isLoading) return;
 
     // Validate that we have the necessary profile and API config
-    if (!childProfile || !apiKey || !provider) {
+    if (!activeKidProfile || !apiKey || !provider) {
       // This shouldn't happen if ProfileSetup is working correctly
       console.error('Missing profile or API configuration');
       return;
@@ -57,7 +59,7 @@ const ChatInterface = () => {
       // Send message to LLM
       const response = await messagingService.sendMessage({
         message: input,
-        childProfile,
+        childProfile: activeKidProfile,
         parentProfile: parentProfile || undefined,
         apiKey: apiKey,
         provider: provider,
@@ -225,7 +227,7 @@ const ChatInterface = () => {
                   ) : (
                     <Typography
                       variant="body1"
-                      color="white"
+                      color="black"
                     >
                       {message.content}
                     </Typography>

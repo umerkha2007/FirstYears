@@ -21,6 +21,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { chatHistoryService } from '../services/chatHistoryService';
 import type { ChatHistory } from '../services/chatHistoryService';
+import { useKidProfile } from '../contexts/KidProfileContext';
 
 interface ChatHistoryPanelProps {
   activeHistoryId: string | null;
@@ -41,15 +42,20 @@ const ChatHistoryPanel = ({
   const [editTitle, setEditTitle] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingHistoryId, setDeletingHistoryId] = useState<string | null>(null);
+  const { activeKidProfileId } = useKidProfile();
 
   const loadHistories = () => {
-    const allHistories = chatHistoryService.getAllNonEmptyHistories();
-    setHistories(allHistories);
+    if (activeKidProfileId) {
+      const allHistories = chatHistoryService.getAllNonEmptyHistories(activeKidProfileId);
+      setHistories(allHistories);
+    } else {
+      setHistories([]);
+    }
   };
 
   useEffect(() => {
     loadHistories();
-  }, []);
+  }, [activeKidProfileId]);
 
   // Reload histories when active history changes or messages are added
   useEffect(() => {

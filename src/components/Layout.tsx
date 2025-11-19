@@ -8,12 +8,22 @@ import { useChat } from '../contexts/ChatContext';
 interface LayoutProps {
   children: ReactNode;
   onSettingsClick?: () => void;
+  onManageKidsClick?: () => void;
+  onHelpClick?: () => void;
   showChatHistory?: boolean;
+  showKidSelector?: boolean;
 }
 
 const DRAWER_WIDTH = 280;
 
-const Layout = ({ children, onSettingsClick, showChatHistory = false }: LayoutProps) => {
+const Layout = ({ 
+  children, 
+  onSettingsClick, 
+  onManageKidsClick,
+  onHelpClick,
+  showChatHistory = false,
+  showKidSelector = false,
+}: LayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -50,14 +60,18 @@ const Layout = ({ children, onSettingsClick, showChatHistory = false }: LayoutPr
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%' }}>
       <Header 
         onSettingsClick={onSettingsClick}
+        onManageKidsClick={onManageKidsClick}
+        onHelpClick={onHelpClick}
         onMenuClick={handleDrawerToggle}
         showMenuButton={showChatHistory && isMobile}
+        showKidSelector={showKidSelector}
       />
       
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', minHeight: 0 }}>
         {/* Chat History Sidebar - Desktop */}
         {showChatHistory && !isMobile && (
           <Box
+            data-tutorial-id="chat-history-sidebar"
             sx={{
               width: DRAWER_WIDTH,
               flexShrink: 0,

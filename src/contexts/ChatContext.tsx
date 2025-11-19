@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { chatHistoryService } from '../services/chatHistoryService';
 import type { ChatMessage } from '../services/messagingService';
+import { useKidProfile } from './KidProfileContext';
 
 interface ChatContextType {
   messages: ChatMessage[];
@@ -20,16 +21,23 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { activeKidProfileId } = useKidProfile();
 
-  // Initialize with an empty history or load existing empty one
+  // Initialize with an empty history or load existing empty one for active kid
   useEffect(() => {
-    const emptyHistory = chatHistoryService.getOrCreateEmptyHistory();
-    setActiveHistoryId(emptyHistory.id);
-    setMessages(emptyHistory.messages);
-  }, []);
+    if (activeKidProfileId) {
+      const emptyHistory = chatHistoryService.getOrCreateEmptyHistory(activeKidProfileId);
+      setActiveHistoryId(emptyHistory.id);
+      setMessages(emptyHistory.messages);
+    } else {
+      // No active kid profile, clear messages
+      setActiveHistoryId(null);
+      setMessages([]);
+    }
+  }, [activeKidProfileId]);
 
   const addMessage = (message: ChatMessage) => {
-    if (!activeHistoryId) return;
+    if (!activeHistoryId || !activeKidProfileId) return;
 
     // Add message to state
     setMessages((prev) => [...prev, message]);
@@ -47,6 +55,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const createNewChat = () => {
+    if (!activeKidProfileId) return;
+
     // Check if current history is empty
     if (activeHistoryId) {
       const currentHistory = chatHistoryService.getHistoryById(activeHistoryId);
@@ -56,8 +66,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Create or get empty history
-    const emptyHistory = chatHistoryService.getOrCreateEmptyHistory();
+    // Create or get empty history for active kid
+    const emptyHistory = chatHistoryService.getOrCreateEmptyHistory(activeKidProfileId);
     setActiveHistoryId(emptyHistory.id);
     setMessages(emptyHistory.messages);
   };

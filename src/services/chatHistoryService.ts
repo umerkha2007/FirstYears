@@ -10,6 +10,7 @@ const STORAGE_KEY = 'firstyears_chat_histories';
 
 export interface ChatHistory {
   id: string;
+  kidProfileId: string; // Associate each history with a kid profile
   title: string;
   messages: ChatMessage[];
   createdAt: Date;
@@ -52,9 +53,10 @@ class ChatHistoryService {
   /**
    * Create a new chat history
    */
-  createNewHistory(): ChatHistory {
+  createNewHistory(kidProfileId: string): ChatHistory {
     const newHistory: ChatHistory = {
       id: Date.now().toString(),
+      kidProfileId,
       title: 'New Chat',
       messages: [],
       createdAt: new Date(),
@@ -154,27 +156,60 @@ class ChatHistoryService {
   }
 
   /**
-   * Get the most recent empty history or create one
+   * Get the most recent empty history for a kid profile or create one
    */
-  getOrCreateEmptyHistory(): ChatHistory {
+  getOrCreateEmptyHistory(kidProfileId: string): ChatHistory {
     const histories = this.loadAllHistories();
-    const emptyHistory = histories.find((h) => h.messages.length === 0);
+    const emptyHistory = histories.find(
+      (h) => h.messages.length === 0 && h.kidProfileId === kidProfileId
+    );
 
     if (emptyHistory) {
       return emptyHistory;
     }
 
-    return this.createNewHistory();
+    return this.createNewHistory(kidProfileId);
   }
 
   /**
-   * Get all non-empty chat histories sorted by updated date
+   * Get all non-empty chat histories for a kid profile sorted by updated date
    */
-  getAllNonEmptyHistories(): ChatHistory[] {
+  getAllNonEmptyHistories(kidProfileId?: string): ChatHistory[] {
+    const histories = this.loadAllHistories();
+    let filtered = histories.filter((h) => h.messages.length > 0);
+    
+    if (kidProfileId) {
+      filtered = filtered.filter((h) => h.kidProfileId === kidProfileId);
+    }
+    
+    return filtered.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+
+  /**
+   * Get all chat histories for a specific kid profile
+   */
+  getHistoriesByKidProfile(kidProfileId: string): ChatHistory[] {
     const histories = this.loadAllHistories();
     return histories
-      .filter((h) => h.messages.length > 0)
+      .filter((h) => h.kidProfileId === kidProfileId)
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+
+  /**
+   * Delete all chat histories for a specific kid profile
+   */
+  deleteHistoriesByKidProfile(kidProfileId: string): boolean {
+    const histories = this.loadAllHistories();
+    const filteredHistories = histories.filter((h) => h.kidProfileId !== kidProfileId);
+    return this.saveAllHistories(filteredHistories);
+  }
+
+  /**
+   * Check if there's an empty history for a specific kid profile
+   */
+  hasEmptyHistoryForKid(kidProfileId: string): boolean {
+    const histories = this.loadAllHistories();
+    return histories.some((h) => h.messages.length === 0 && h.kidProfileId === kidProfileId);
   }
 
   /**

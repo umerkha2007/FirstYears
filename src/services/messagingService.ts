@@ -81,8 +81,8 @@ class MessagingService {
   /**
    * Generate the system prompt for the conversation
    */
-  getSystemPrompt(childProfile: ChildProfile): string {
-    return generateSystemPrompt(childProfile);
+  getSystemPrompt(childProfile: ChildProfile, parentProfile?: ParentProfile): string {
+    return generateSystemPrompt(childProfile, parentProfile);
   }
 
   /**
