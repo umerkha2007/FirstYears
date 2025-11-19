@@ -47,14 +47,14 @@ const Layout = ({ children, onSettingsClick, showChatHistory = false }: LayoutPr
   ) : null;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%' }}>
       <Header 
         onSettingsClick={onSettingsClick}
         onMenuClick={handleDrawerToggle}
         showMenuButton={showChatHistory && isMobile}
       />
       
-      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', minHeight: 0 }}>
         {/* Chat History Sidebar - Desktop */}
         {showChatHistory && !isMobile && (
           <Box
@@ -64,6 +64,7 @@ const Layout = ({ children, onSettingsClick, showChatHistory = false }: LayoutPr
               borderRight: 1,
               borderColor: 'divider',
               overflow: 'hidden',
+              height: '100%',
             }}
           >
             {drawer}

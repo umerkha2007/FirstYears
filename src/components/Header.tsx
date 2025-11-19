@@ -1,7 +1,7 @@
-import { AppBar, Toolbar, Typography, IconButton } from '@mui/material';
-import ChildCareIcon from '@mui/icons-material/ChildCare';
+import { AppBar, Toolbar, Typography, IconButton, Box } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MenuIcon from '@mui/icons-material/Menu';
+import logo from '../assets/logo/transparent-logo.svg';
 
 interface HeaderProps {
   onSettingsClick?: () => void;
@@ -24,7 +24,12 @@ const Header = ({ onSettingsClick, onMenuClick, showMenuButton = false }: Header
             <MenuIcon />
           </IconButton>
         )}
-        <ChildCareIcon sx={{ mr: 2 }} />
+        <Box
+          component="img"
+          src={logo}
+          alt="FirstYears Logo"
+          sx={{ height: 32, mr: 2, background: 'white', borderRadius: '30%' }}
+        />
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           FirstYears
         </Typography>
