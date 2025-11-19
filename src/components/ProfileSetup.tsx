@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -19,7 +19,11 @@ import {
   DialogActions,
   Link,
   Tooltip,
+  Snackbar,
+  Alert,
 } from '@mui/material';
+import { profileStorageService } from '../services/profileStorageService';
+import type { ProfileData } from '../services/profileStorageService';
 
 const steps = ['Parent Profile', 'Child Profile', 'API Configuration'];
 
@@ -89,15 +93,38 @@ const apiGuides: Record<string, APIGuide> = {
   }
 };
 
-const ProfileSetup = () => {
+interface ProfileSetupProps {
+  onSetupComplete?: () => void;
+  isEditing?: boolean;
+}
+
+const ProfileSetup = ({ onSetupComplete, isEditing = false }: ProfileSetupProps) => {
   const [activeStep, setActiveStep] = useState(0);
   const [parentName, setParentName] = useState('');
+  const [parentMedicalHistory, setParentMedicalHistory] = useState('');
   const [childName, setChildName] = useState('');
   const [childDOB, setChildDOB] = useState('');
   const [medicalHistory, setMedicalHistory] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [provider, setProvider] = useState('');
   const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+  // Load existing profile data on component mount
+  useEffect(() => {
+    const existingData = profileStorageService.loadAllProfiles();
+    if (existingData) {
+      setParentName(existingData.parentProfile.name);
+      setParentMedicalHistory(existingData.parentProfile.medicalHistory || '');
+      setChildName(existingData.childProfile.name);
+      setChildDOB(existingData.childProfile.dateOfBirth);
+      setMedicalHistory(existingData.childProfile.medicalHistory || '');
+      setApiKey(existingData.apiConfig.apiKey);
+      setProvider(existingData.apiConfig.provider);
+    }
+  }, []);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -108,8 +135,40 @@ const ProfileSetup = () => {
   };
 
   const handleSave = () => {
-    // TODO: Save to localStorage
-    console.log('Saving profiles...');
+    const profileData: ProfileData = {
+      parentProfile: {
+        name: parentName,
+        medicalHistory: parentMedicalHistory,
+      },
+      childProfile: {
+        name: childName,
+        dateOfBirth: childDOB,
+        medicalHistory: medicalHistory,
+      },
+      apiConfig: {
+        provider: provider,
+        apiKey: apiKey,
+      },
+    };
+
+    const success = profileStorageService.saveAllProfiles(profileData);
+
+    if (success) {
+      setSnackbarMessage(isEditing ? 'Profile updated successfully! Redirecting to chat...' : 'Profile saved successfully! Redirecting to chat...');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      console.log('Profiles saved successfully');
+      
+      // Redirect to chat after a short delay to show the success message
+      setTimeout(() => {
+        onSetupComplete?.();
+      }, 1500);
+    } else {
+      setSnackbarMessage('Failed to save profile. Please try again.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      console.error('Failed to save profiles');
+    }
   };
 
   const isStepValid = (step: number): boolean => {
@@ -142,6 +201,16 @@ const ProfileSetup = () => {
               required
               error={parentName.trim() === ''}
               helperText={parentName.trim() === '' ? 'This field is required' : ''}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Medical History (optional)"
+              value={parentMedicalHistory}
+              onChange={(e) => setParentMedicalHistory(e.target.value)}
+              margin="normal"
+              placeholder="Any relevant medical information about yourself..."
             />
           </Box>
         );
@@ -259,10 +328,10 @@ const ProfileSetup = () => {
       <Card sx={{ mx: { xs: 0, sm: 2 } }}>
         <CardContent>
           <Typography variant="h4" gutterBottom align="center">
-            Welcome to FirstYears! 👶
+            {isEditing ? 'Update Your Profile ⚙️' : 'Welcome to FirstYears! 👶'}
           </Typography>
           <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4 }}>
-            Let's set up your profile to provide personalized parenting advice
+            {isEditing ? 'Update your profile information and settings' : "Let's set up your profile to provide personalized parenting advice"}
           </Typography>
 
           <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
@@ -294,7 +363,7 @@ const ProfileSetup = () => {
                   onClick={activeStep === steps.length - 1 ? handleSave : handleNext}
                   disabled={!isStepValid(activeStep)}
                 >
-                  {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+                  {activeStep === steps.length - 1 ? (isEditing ? 'Save Changes' : 'Finish') : 'Next'}
                 </Button>
               </span>
             </Tooltip>
@@ -345,6 +414,22 @@ const ProfileSetup = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

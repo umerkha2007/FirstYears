@@ -1,15 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { profileStorageService } from '../services/profileStorageService';
+import type { ParentProfile, ChildProfile } from '../services/profileStorageService';
 
-export interface ParentProfile {
-  name: string;
-}
-
-export interface ChildProfile {
-  name: string;
-  dateOfBirth: string;
-  medicalHistory: string;
-}
+export type { ParentProfile, ChildProfile };
 
 interface ProfileContextType {
   parentProfile: ParentProfile | null;
@@ -21,6 +15,7 @@ interface ProfileContextType {
   setApiKey: (key: string) => void;
   setProvider: (provider: string) => void;
   isSetupComplete: () => boolean;
+  refreshProfileData: () => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -31,41 +26,55 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [apiKey, setApiKeyState] = useState('');
   const [provider, setProviderState] = useState('');
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedParent = localStorage.getItem('parentProfile');
-    const savedChild = localStorage.getItem('childProfile');
-    const savedApiKey = localStorage.getItem('apiKey');
-    const savedProvider = localStorage.getItem('provider');
+  // Load from localStorage using profileStorageService
+  const loadProfileData = () => {
+    const allData = profileStorageService.loadAllProfiles();
+    if (allData) {
+      setParentProfileState(allData.parentProfile);
+      setChildProfileState(allData.childProfile);
+      setApiKeyState(allData.apiConfig.apiKey);
+      setProviderState(allData.apiConfig.provider);
+    }
+  };
 
-    if (savedParent) setParentProfileState(JSON.parse(savedParent));
-    if (savedChild) setChildProfileState(JSON.parse(savedChild));
-    if (savedApiKey) setApiKeyState(savedApiKey);
-    if (savedProvider) setProviderState(savedProvider);
+  useEffect(() => {
+    loadProfileData();
   }, []);
 
   const setParentProfile = (profile: ParentProfile) => {
     setParentProfileState(profile);
-    localStorage.setItem('parentProfile', JSON.stringify(profile));
+    profileStorageService.saveParentProfile(profile);
   };
 
   const setChildProfile = (profile: ChildProfile) => {
     setChildProfileState(profile);
-    localStorage.setItem('childProfile', JSON.stringify(profile));
+    profileStorageService.saveChildProfile(profile);
   };
 
   const setApiKey = (key: string) => {
     setApiKeyState(key);
-    localStorage.setItem('apiKey', key);
+    const currentConfig = profileStorageService.loadAPIConfig();
+    profileStorageService.saveAPIConfig({ 
+      provider: currentConfig?.provider || provider, 
+      apiKey: key 
+    });
   };
 
   const setProvider = (prov: string) => {
     setProviderState(prov);
-    localStorage.setItem('provider', prov);
+    const currentConfig = profileStorageService.loadAPIConfig();
+    profileStorageService.saveAPIConfig({ 
+      provider: prov, 
+      apiKey: currentConfig?.apiKey || apiKey 
+    });
   };
 
   const isSetupComplete = () => {
-    return !!(parentProfile && childProfile && apiKey && provider);
+    return profileStorageService.isSetupComplete();
+  };
+
+  const refreshProfileData = () => {
+    loadProfileData();
   };
 
   return (
@@ -80,6 +89,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         setApiKey,
         setProvider,
         isSetupComplete,
+        refreshProfileData,
       }}
     >
       {children}

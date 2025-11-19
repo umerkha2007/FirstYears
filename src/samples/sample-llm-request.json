@@ -1,0 +1,56 @@
+{
+  "context": {
+    "child": {
+      "name": "Emma",
+      "dateOfBirth": "2025-05-15",
+      "age": {
+        "years": 0,
+        "months": 6,
+        "weeks": 26,
+        "days": 187,
+        "formatted": "6 months old"
+      },
+      "medicalHistory": "No known allergies, regular check-ups completed"
+    },
+    "parent": {
+      "name": "Sarah Johnson",
+      "medicalHistory": "No relevant medical history"
+    },
+    "conversationHistory": [
+      {
+        "role": "user",
+        "content": "What solid foods can I start introducing to my baby?",
+        "timestamp": "2025-11-18T10:30:00Z"
+      },
+      {
+        "role": "assistant",
+        "content": "At 6 months, you can start introducing pureed vegetables like sweet potato and carrots...",
+        "timestamp": "2025-11-18T10:30:15Z"
+      }
+    ],
+    "currentMessage": "What portion sizes should I aim for?",
+    "apiConfig": {
+      "provider": "openai",
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.7,
+      "maxTokens": 500
+    }
+  },
+  "systemInstructions": {
+    "role": "parenting assistant for FirstYears app",
+    "guidelines": [
+      "Provide evidence-based parenting advice",
+      "Tailor responses to child's specific age and circumstances",
+      "Always remind parents to consult pediatrician for medical concerns",
+      "Be supportive and non-judgmental",
+      "Format responses in Markdown for readability"
+    ],
+    "responseFormat": "markdown",
+    "includeSections": [
+      "Direct answer to question",
+      "Age-appropriate details",
+      "Safety considerations",
+      "Additional tips or resources"
+    ]
+  }
+}

@@ -1,43 +1,88 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+import { chatHistoryService } from '../services/chatHistoryService';
+import type { ChatMessage } from '../services/messagingService';
 
 interface ChatContextType {
-  messages: Message[];
-  addMessage: (message: Message) => void;
-  clearMessages: () => void;
+  messages: ChatMessage[];
+  activeHistoryId: string | null;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  addMessage: (message: ChatMessage) => void;
+  loadHistory: (historyId: string) => void;
+  createNewChat: () => void;
+  refreshHistories: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const addMessage = (message: Message) => {
+  // Initialize with an empty history or load existing empty one
+  useEffect(() => {
+    const emptyHistory = chatHistoryService.getOrCreateEmptyHistory();
+    setActiveHistoryId(emptyHistory.id);
+    setMessages(emptyHistory.messages);
+  }, []);
+
+  const addMessage = (message: ChatMessage) => {
+    if (!activeHistoryId) return;
+
+    // Add message to state
     setMessages((prev) => [...prev, message]);
+
+    // Save to history service
+    chatHistoryService.addMessageToHistory(activeHistoryId, message);
   };
 
-  const clearMessages = () => {
-    setMessages([]);
+  const loadHistory = (historyId: string) => {
+    const history = chatHistoryService.getHistoryById(historyId);
+    if (history) {
+      setActiveHistoryId(history.id);
+      setMessages(history.messages);
+    }
+  };
+
+  const createNewChat = () => {
+    // Check if current history is empty
+    if (activeHistoryId) {
+      const currentHistory = chatHistoryService.getHistoryById(activeHistoryId);
+      if (currentHistory && currentHistory.messages.length === 0) {
+        // Already on an empty chat, no need to create new one
+        return;
+      }
+    }
+
+    // Create or get empty history
+    const emptyHistory = chatHistoryService.getOrCreateEmptyHistory();
+    setActiveHistoryId(emptyHistory.id);
+    setMessages(emptyHistory.messages);
+  };
+
+  const refreshHistories = () => {
+    // This is called by components to trigger re-render when histories change
+    if (activeHistoryId) {
+      const history = chatHistoryService.getHistoryById(activeHistoryId);
+      if (history) {
+        setMessages(history.messages);
+      }
+    }
   };
 
   return (
     <ChatContext.Provider
       value={{
         messages,
-        addMessage,
-        clearMessages,
+        activeHistoryId,
         isLoading,
         setIsLoading,
+        addMessage,
+        loadHistory,
+        createNewChat,
+        refreshHistories,
       }}
     >
       {children}
